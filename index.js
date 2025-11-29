@@ -73,16 +73,50 @@ function hookAIResponses() {
     });
 }
 
+
 function addMenuButton() {
-    const btn = document.createElement('button');
-    btn.innerText = 'AI Journal & Preferences';
-    btn.style = 'margin-left:8px;';
-    btn.onclick = openPanel;
-    document.querySelector('#menu-bar')?.appendChild(btn);
+    // Wait for menu bar to exist
+    function tryAdd() {
+        const menu = document.querySelector('#menu-bar');
+        if (menu && !document.getElementById('memory-extension-menu-btn')) {
+            const btn = document.createElement('button');
+            btn.id = 'memory-extension-menu-btn';
+            btn.innerText = 'AI Journal & Preferences';
+            btn.style = 'margin-left:8px;';
+            btn.onclick = openPanel;
+            menu.appendChild(btn);
+        } else if (!menu) {
+            setTimeout(tryAdd, 500);
+        }
+    }
+    tryAdd();
 }
+
+// Add a settings panel to the Extensions page
+function addSettingsPanel() {
+    if (!window.SillyTavern || !window.SillyTavern.registerExtensionPanel) return;
+    window.SillyTavern.registerExtensionPanel({
+        id: 'sillytavern-memory-extension',
+        name: 'AI Journal & Preferences',
+        render: renderPanel,
+        open: openPanel,
+        close: closePanel
+    });
+}
+
 
 (function() {
     loadSettings();
     hookAIResponses();
     addMenuButton();
+    // Try to register settings panel after app is ready
+    if (window.SillyTavern && window.SillyTavern.eventSource) {
+        window.SillyTavern.eventSource.on('APP_READY', addSettingsPanel);
+    } else {
+        setTimeout(() => {
+            if (window.SillyTavern && window.SillyTavern.eventSource) {
+                window.SillyTavern.eventSource.on('APP_READY', addSettingsPanel);
+            }
+        }, 2000);
+    }
 })();
