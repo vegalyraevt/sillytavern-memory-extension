@@ -1,7 +1,7 @@
 // SillyTavern UI Extension: AI Long-Term Journal & Preferences
 // This extension adds a UI panel to view and manage AI memory and preferences.
 
-import { extension_settings } from '../../../extensions.js';
+import { extension_settings, getContext } from '../../../extensions.js';
 import { saveSettingsDebounced } from '../../../../script.js';
 import { eventSource, event_types } from '../../../../script.js';
 
@@ -118,15 +118,9 @@ function hookAIResponses() {
 
 
 
-(function () {
+// This function is called when the extension is loaded
+jQuery(async () => {
     loadSettings();
     hookAIResponses();
-    // Wait for DOM ready
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', () => {
-            addExtensionSettings();
-        });
-    } else {
-        addExtensionSettings();
-    }
-})();
+    addExtensionSettings();
+});
