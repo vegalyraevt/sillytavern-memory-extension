@@ -40,11 +40,11 @@ function addEntry(type, entry) {
 function updateSettingsDisplay() {
     const preferencesList = document.querySelector('#memory-extension-preferences');
     const memoriesList = document.querySelector('#memory-extension-memories');
-    
+
     if (preferencesList) {
         preferencesList.innerHTML = extensionSettings.preferences.map(e => `<li><span style='color:#888;'>${e.date}:</span> ${e.entry}</li>`).join('') || '<li><em>No preferences yet.</em></li>';
     }
-    
+
     if (memoriesList) {
         memoriesList.innerHTML = extensionSettings.memories.map(e => `<li><span style='color:#888;'>${e.date}:</span> ${e.entry}</li>`).join('') || '<li><em>No memories yet.</em></li>';
     }
@@ -108,15 +108,29 @@ function addExtensionSettings() {
 function hookAIResponses() {
     eventSource.on(event_types.CHARACTER_MESSAGE_RENDERED, (data) => {
         const message = data?.mes || '';
-        // Only let the AI add entries
-        const prefMatch = message.match(/\/preferences\s+"([^"]+)"/i);
-        if (prefMatch) addEntry('preferences', prefMatch[1]);
-        const memMatch = message.match(/\/memory\s+"([^"]+)"/i);
-        if (memMatch) addEntry('memories', memMatch[1]);
+        console.log('[Memory Extension] AI message received:', message.substring(0, 100) + '...');
+
+        // Only let the AI add entries - handle multiple commands in one message
+
+        // Handle preferences commands (with or without space after command)
+        const prefRegex = /\/preferences\s*"([^"]*)"/gi;
+        const prefMatches = [...message.matchAll(prefRegex)];
+        console.log('[Memory Extension] Found', prefMatches.length, 'preferences commands');
+        for (const match of prefMatches) {
+            console.log('[Memory Extension] Adding preference:', match[1]);
+            addEntry('preferences', match[1]);
+        }
+
+        // Handle memory commands (with or without space after command)
+        const memRegex = /\/memory\s*"([^"]*)"/gi;
+        const memMatches = [...message.matchAll(memRegex)];
+        console.log('[Memory Extension] Found', memMatches.length, 'memory commands');
+        for (const match of memMatches) {
+            console.log('[Memory Extension] Adding memory:', match[1]);
+            addEntry('memories', match[1]);
+        }
     });
 }
-
-
 
 // This function is called when the extension is loaded
 jQuery(async () => {
