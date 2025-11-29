@@ -28,39 +28,76 @@ function addEntry(type, entry) {
         extensionSettings.memories.push({ date, entry });
     }
     saveSettings();
-    renderPanel();
+    // Refresh the extension settings display
+    updateSettingsDisplay();
 }
 
-function renderPanel() {
-    const panel = document.getElementById('memory-extension-panel');
-    if (!panel) return;
-    panel.innerHTML = `
-      <h2>AI Journal & Preferences</h2>
-      <div style="margin-bottom:1em;">
-        <strong>Preferences</strong>
-        <ul>${extensionSettings.preferences.map(e => `<li><span style='color:#888;'>${e.date}:</span> ${e.entry}</li>`).join('') || '<li><em>No preferences yet.</em></li>'}</ul>
-      </div>
-      <div>
-        <strong>Memories</strong>
-        <ul>${extensionSettings.memories.map(e => `<li><span style='color:#888;'>${e.date}:</span> ${e.entry}</li>`).join('') || '<li><em>No memories yet.</em></li>'}</ul>
-      </div>
-    `;
-}
-
-function openPanel() {
-    let panel = document.getElementById('memory-extension-panel');
-    if (!panel) {
-        panel = document.createElement('div');
-        panel.id = 'memory-extension-panel';
-        panel.style = 'position:fixed;top:10%;right:10px;width:350px;max-width:90vw;z-index:9999;background:#fff;border:1px solid #aaa;padding:1em;border-radius:8px;box-shadow:0 2px 12px #0002;max-height:80vh;overflow:auto;';
-        document.body.appendChild(panel);
+function updateSettingsDisplay() {
+    const preferencesList = document.querySelector('#memory-extension-preferences');
+    const memoriesList = document.querySelector('#memory-extension-memories');
+    
+    if (preferencesList) {
+        preferencesList.innerHTML = extensionSettings.preferences.map(e => `<li><span style='color:#888;'>${e.date}:</span> ${e.entry}</li>`).join('') || '<li><em>No preferences yet.</em></li>';
     }
-    renderPanel();
+    
+    if (memoriesList) {
+        memoriesList.innerHTML = extensionSettings.memories.map(e => `<li><span style='color:#888;'>${e.date}:</span> ${e.entry}</li>`).join('') || '<li><em>No memories yet.</em></li>';
+    }
 }
 
-function closePanel() {
-    const panel = document.getElementById('memory-extension-panel');
-    if (panel) panel.remove();
+function addExtensionSettings() {
+    const settingsContainer = document.getElementById('extensions_settings');
+    if (!settingsContainer) {
+        return;
+    }
+
+    const inlineDrawer = document.createElement('div');
+    inlineDrawer.classList.add('inline-drawer');
+    settingsContainer.append(inlineDrawer);
+
+    const inlineDrawerToggle = document.createElement('div');
+    inlineDrawerToggle.classList.add('inline-drawer-toggle', 'inline-drawer-header');
+
+    const extensionName = document.createElement('b');
+    extensionName.textContent = 'AI Journal & Preferences';
+
+    const inlineDrawerIcon = document.createElement('div');
+    inlineDrawerIcon.classList.add('inline-drawer-icon', 'fa-solid', 'fa-circle-chevron-down', 'down');
+
+    inlineDrawerToggle.append(extensionName, inlineDrawerIcon);
+
+    const inlineDrawerContent = document.createElement('div');
+    inlineDrawerContent.classList.add('inline-drawer-content');
+
+    inlineDrawer.append(inlineDrawerToggle, inlineDrawerContent);
+
+    // Preferences section
+    const preferencesDiv = document.createElement('div');
+    preferencesDiv.style.marginBottom = '1em';
+    const preferencesTitle = document.createElement('strong');
+    preferencesTitle.textContent = 'Preferences';
+    const preferencesList = document.createElement('ul');
+    preferencesList.id = 'memory-extension-preferences';
+    preferencesList.innerHTML = extensionSettings.preferences.map(e => `<li><span style='color:#888;'>${e.date}:</span> ${e.entry}</li>`).join('') || '<li><em>No preferences yet.</em></li>';
+    preferencesDiv.append(preferencesTitle, preferencesList);
+
+    // Memories section
+    const memoriesDiv = document.createElement('div');
+    const memoriesTitle = document.createElement('strong');
+    memoriesTitle.textContent = 'Memories';
+    const memoriesList = document.createElement('ul');
+    memoriesList.id = 'memory-extension-memories';
+    memoriesList.innerHTML = extensionSettings.memories.map(e => `<li><span style='color:#888;'>${e.date}:</span> ${e.entry}</li>`).join('') || '<li><em>No memories yet.</em></li>';
+    memoriesDiv.append(memoriesTitle, memoriesList);
+
+    inlineDrawerContent.append(preferencesDiv, memoriesDiv);
+
+    // Add click handler for toggle
+    inlineDrawerToggle.addEventListener('click', () => {
+        inlineDrawerContent.classList.toggle('open');
+        inlineDrawerIcon.classList.toggle('down');
+        inlineDrawerIcon.classList.toggle('up');
+    });
 }
 
 function hookAIResponses() {
@@ -76,37 +113,6 @@ function hookAIResponses() {
 }
 
 
-function addMenuButton() {
-    // Wait for menu bar to exist
-    function tryAdd() {
-        const menu = document.querySelector('#menu-bar');
-        if (menu && !document.getElementById('memory-extension-menu-btn')) {
-            const btn = document.createElement('button');
-            btn.id = 'memory-extension-menu-btn';
-            btn.innerText = 'AI Journal & Preferences';
-            btn.style = 'margin-left:8px;';
-            btn.onclick = openPanel;
-            menu.appendChild(btn);
-        } else if (!menu) {
-            setTimeout(tryAdd, 500);
-        }
-    }
-    tryAdd();
-}
-
-// Add a settings panel to the Extensions page
-function addSettingsPanel() {
-    if (!window.SillyTavern || !window.SillyTavern.registerExtensionPanel) return;
-    window.SillyTavern.registerExtensionPanel({
-        id: 'sillytavern-memory-extension',
-        name: 'AI Journal & Preferences',
-        render: renderPanel,
-        open: openPanel,
-        close: closePanel
-    });
-}
-
-
 
 export async function init() {
     loadSettings();
@@ -114,19 +120,9 @@ export async function init() {
     // Wait for DOM ready
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', () => {
-            addMenuButton();
+            addExtensionSettings();
         });
     } else {
-        addMenuButton();
-    }
-    // Register settings panel if available
-    if (window.SillyTavern && window.SillyTavern.registerExtensionPanel) {
-        window.SillyTavern.registerExtensionPanel({
-            id: 'sillytavern-memory-extension',
-            name: 'AI Journal & Preferences',
-            render: renderPanel,
-            open: openPanel,
-            close: closePanel
-        });
+        addExtensionSettings();
     }
 }
