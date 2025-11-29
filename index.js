@@ -1,6 +1,12 @@
 // SillyTavern UI Extension: AI Long-Term Journal & Preferences
 // This extension adds a UI panel to view and manage AI memory and preferences.
 
+import { extension_settings } from '../../../extensions.js';
+import { saveSettingsDebounced } from '../../../../script.js';
+import { eventSource, event_types } from '../../../../script.js';
+
+const MODULE = 'sillytavern-memory-extension';
+
 let extensionSettings = {
     preferences: [],
     memories: []
@@ -8,15 +14,14 @@ let extensionSettings = {
 
 
 function saveSettings() {
-    SillyTavern.getContext().extensionSettings['sillytavern-memory-extension'] = extensionSettings;
-    SillyTavern.getContext().saveSettingsDebounced();
+    extension_settings[MODULE] = extensionSettings;
+    saveSettingsDebounced();
 }
 
 
 function loadSettings() {
-    const ctx = SillyTavern.getContext();
-    if (ctx.extensionSettings['sillytavern-memory-extension']) {
-        extensionSettings = ctx.extensionSettings['sillytavern-memory-extension'];
+    if (extension_settings[MODULE]) {
+        extensionSettings = extension_settings[MODULE];
     }
 }
 
@@ -101,11 +106,10 @@ function addExtensionSettings() {
 }
 
 function hookAIResponses() {
-    const ctx = SillyTavern.getContext();
-    ctx.eventSource.on(ctx.event_types.CHARACTER_MESSAGE_RENDERED, (data) => {
+    eventSource.on(event_types.CHARACTER_MESSAGE_RENDERED, (data) => {
         const message = data?.mes || '';
         // Only let the AI add entries
-        const prefMatch = message.match(/\/prefrences\s+"([^"]+)"/i);
+        const prefMatch = message.match(/\/preferences\s+"([^"]+)"/i);
         if (prefMatch) addEntry('preferences', prefMatch[1]);
         const memMatch = message.match(/\/memory\s+"([^"]+)"/i);
         if (memMatch) addEntry('memories', memMatch[1]);
